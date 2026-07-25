@@ -6,7 +6,7 @@ dotenv.config();
 
 const test = async () => {
   try {
-    const uri = process.env.MONGO_URI || 'mongodb+srv://pranav:pranav12345@cluster0.n6qrdxt.mongodb.net/projectnest';
+    const uri = process.env.MONGO_URI;
     console.log('Connecting to:', uri);
     await mongoose.connect(uri);
     console.log('Connected!');
