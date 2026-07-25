@@ -1,0 +1,11 @@
+ProjectNest - Phase 12 Completion Log (Direct VM-only setup)
+Completed on: 2026-07-21
+
+SUMMARY OF WORK COMPLETED:
+1. HTTP Security Headers: Mounted `helmet` inside `server/src/app.js` with options configuration.
+2. PM2 Cluster Configuration: Created `ecosystem.config.cjs` to handle auto-scaling, autorestart limits, and logs path routing.
+3. Root-Level Bootstrapping script: Created a root `package.json` to bootstrap dependencies and build clients with single commands.
+4. Cleanups: Deleted all previously created client/server Dockerfiles, Nginx configurations, and Compose files.
+5. GitHub Actions Workflow: Created `.github/workflows/deploy.yml` compiling client assets and verifying server scripts health, without running Docker image jobs.
+6. Deployment documentation: Created `DEPLOY.md` detailing direct VM installations, env variables setups, and PM2 commands.
+7. Verification: Client builds compiled cleanly in 21.96s. Backend server startup test passed with zero errors.

@@ -1,0 +1,12 @@
+ProjectNest - Phase 16 Completion Log
+Completed on: 2026-07-21
+
+SUMMARY OF WORK COMPLETED:
+1. Member Management Controllers: Added admin-only `updateMemberRole` and `removeMember` controllers (safeguarding owner from role changes and workspace removal) inside `server/src/controllers/workspaceController.js`.
+2. Routing: Integrated PATCH and DELETE member routes in `server/src/routes/workspaceRoutes.js`.
+3. Workspace Settings UI: Created `client/src/pages/WorkspaceSettings.jsx` providing:
+   - General Settings: Edit workspace name and description.
+   - Members settings: Displays members list, role selections (Admin / Member), remove options, and workspace invite code copy/regenerate.
+   - Danger Zone: Leave workspace action and delete workspace confirmation form.
+4. Navigation: Wired up the workspace Settings sidebar link and AppRoutes elements.
+5. Verification: Production compilation completed successfully.

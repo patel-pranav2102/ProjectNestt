@@ -1,0 +1,21 @@
+{
+  "name": "projectnest-root",
+  "version": "1.0.0",
+  "description": "ProjectNest Developer Collaboration Platform root workspaces manager",
+  "private": true,
+  "scripts": {
+    "bootstrap": "npm install --prefix server && npm install --prefix client",
+    "build:client": "npm run build --prefix client",
+    "start:server": "npm start --prefix server",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "prod:start": "pm2 start ecosystem.config.cjs"
+  },
+  "keywords": [
+    "mern",
+    "pm2",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "ISC"
+}
