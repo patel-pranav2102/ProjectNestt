@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   selectActiveWorkspace, 
+  selectWorkspaces,
   selectWorkspaceStats, 
-  setWorkspaceStats 
+  setWorkspaceStats,
+  setActiveWorkspace
 } from '../features/workspaceSlice.js';
 import { selectCurrentUser } from '../features/authSlice.js';
 import { fetchWorkspaceStats } from '../services/workspaceService.js';
@@ -17,7 +19,15 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const activeWorkspace = useSelector(selectActiveWorkspace);
+  const workspaces = useSelector(selectWorkspaces);
   const workspaceStats = useSelector(selectWorkspaceStats);
+
+  // Auto-select first workspace if activeWorkspace is null but workspaces are loaded
+  useEffect(() => {
+    if (!activeWorkspace && workspaces && workspaces.length > 0) {
+      dispatch(setActiveWorkspace(workspaces[0]));
+    }
+  }, [activeWorkspace, workspaces, dispatch]);
 
   // 1. Fetch Workspace Stats
   const { data: statsData, isLoading, refetch } = useQuery({

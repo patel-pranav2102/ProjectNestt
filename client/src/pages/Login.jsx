@@ -1,29 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { loginUser } from '../services/authService.js';
-import { setCredentials, setLoading, setError, selectAuthError, selectAuthLoading } from '../features/authSlice.js';
+import { fetchMyWorkspaces } from '../services/workspaceService.js';
+import { setCredentials, setLoading, setError, selectAuthError, selectAuthLoading, selectIsAuthenticated } from '../features/authSlice.js';
+import { setWorkspaces, setActiveWorkspace } from '../features/workspaceSlice.js';
 import Button from '../components/common/Button.jsx';
 import Input from '../components/common/Input.jsx';
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const authError = useSelector(selectAuthError);
   const authLoading = useSelector(selectAuthLoading);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   
   const { register, handleSubmit, formState: { errors } } = useForm();
-  
-  const from = location.state?.from?.pathname || '/dashboard';
+
+  // Redirect to /dashboard if user is already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      window.location.href = '/dashboard';
+    }
+  }, [isAuthenticated]);
 
   const onSubmit = async (formData) => {
     dispatch(setLoading(true));
     try {
       const data = await loginUser(formData);
       dispatch(setCredentials({ user: data.user, token: data.token }));
-      navigate(from, { replace: true });
+      window.location.href = '/dashboard';
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
       dispatch(setError(errorMessage));

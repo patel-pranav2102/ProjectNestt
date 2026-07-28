@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectIsAuthenticated, selectAuthLoading } from '../../features/authSlice.js';
 
@@ -7,7 +7,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectCurrentUser);
   const loading = useSelector(selectAuthLoading);
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -20,7 +19,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Check if role is allowed
