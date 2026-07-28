@@ -115,24 +115,7 @@ const MessageInput = ({ replyToMessage, setReplyToMessage }) => {
           formData.append('parentId', replyToMessage._id);
         }
 
-        const data = await postNewMessage(formData);
-        
-        // Broadcast the file message manually to notify socket rooms
-        if (socket) {
-          if (activeConversation.type === 'channel') {
-            socket.emit('sendMessage', { 
-              channelId: activeConversation.id, 
-              content: `[Shared Attachment: ${selectedFile.name}]`,
-              parentId: replyToMessage ? replyToMessage._id : undefined
-            });
-          } else {
-            socket.emit('sendMessage', { 
-              receiverId: activeConversation.id, 
-              content: `[Shared Attachment: ${selectedFile.name}]`,
-              parentId: replyToMessage ? replyToMessage._id : undefined
-            });
-          }
-        }
+        await postNewMessage(formData);
       } else {
         // Standard text message sent instantly via Socket
         if (socket) {

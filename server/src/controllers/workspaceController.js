@@ -10,6 +10,7 @@ import Channel from '../models/Channel.js';
 import ActivityModel from '../models/Activity.js';
 import FileModel from '../models/File.js';
 import { logActivity } from '../utils/activityLogger.js';
+import { emitNotification } from '../sockets/chatSocket.js';
 import {
   BadRequestError,
   NotFoundError,
@@ -129,6 +130,23 @@ export const joinWorkspace = async (req, res, next) => {
     // Add user as a Member
     workspace.members.push({ userId: req.user.id, role: 'Member' });
     await workspace.save();
+
+    // Trigger notification for joining workspace
+    const io = req.app.get('io');
+    if (io) {
+      try {
+        await emitNotification(io, {
+          recipient: req.user.id,
+          type: 'workspace_joined',
+          message: `You have successfully joined the workspace: "${workspace.name}".`,
+          link: `/workspace/${workspace._id}`,
+          workspaceId: workspace._id,
+          triggeredBy: req.user.id,
+        });
+      } catch (err) {
+        console.error('Failed to send workspace joined notification:', err.message);
+      }
+    }
 
     res.status(200).json({
       status: 'success',

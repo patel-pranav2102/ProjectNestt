@@ -267,7 +267,8 @@ const CalendarView = () => {
   const workspace = wsDetails?.workspace;
   const isOwner = workspace?.owner?._id === currentUserId || workspace?.owner === currentUserId;
   const myMember = workspace?.members?.find(m => (m.userId?._id || m.userId)?.toString() === currentUserId);
-  const isAdmin = isOwner || myMember?.role === 'Admin';
+  const isTeamLeadOrAdminGlobal = currentUser?.role === 'Team Lead' || currentUser?.role === 'Admin';
+  const isAdmin = isOwner || myMember?.role === 'Admin' || isTeamLeadOrAdminGlobal;
 
   // Group meetings by day
   const meetingsGrouped = meetingsList.reduce((acc, current) => {

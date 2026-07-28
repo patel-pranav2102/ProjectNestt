@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 
 const initialState = {
   channels: [],
@@ -124,5 +124,8 @@ export const selectChannels = (state) => state.chat.channels;
 export const selectContacts = (state) => state.chat.contacts;
 export const selectActiveConversation = (state) => state.chat.activeConversation;
 export const selectChatMessages = (state) => state.chat.messages;
-export const selectTypingUsers = (state) => Object.values(state.chat.typingUsers);
+export const selectTypingUsers = createSelector(
+  [(state) => state.chat.typingUsers],
+  (typingUsers) => Object.values(typingUsers)
+);
 export const selectUnreadCounts = (state) => state.chat.unreadCounts;

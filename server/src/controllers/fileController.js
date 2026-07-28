@@ -5,12 +5,7 @@ import { NotFoundError } from '../utils/errors.js';
 // 1. GET ALL WORKSPACE FILES
 export const getWorkspaceFiles = async (req, res, next) => {
   try {
-    const { workspaceId } = req.params;
-
-    const workspace = await Workspace.findById(workspaceId);
-    if (!workspace) {
-      throw new NotFoundError('Workspace not found.');
-    }
+    const workspaceId = req.workspace._id;
 
     const files = await FileModel.find({ workspaceId })
       .populate('uploadedBy', 'name email avatarUrl')

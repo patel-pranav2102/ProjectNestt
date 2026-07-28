@@ -19,6 +19,21 @@ API.interceptors.request.use(
   }
 );
 
+// Queueing system for concurrent 401 requests during token refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Response Interceptor: Handle token refresh on 401 Unauthorized
 API.interceptors.response.use(
   (response) => response,
@@ -27,7 +42,21 @@ API.interceptors.response.use(
     
     // If the error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return API(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
       
       try {
         // Request a new access token using the refresh token stored in cookie
@@ -42,14 +71,19 @@ API.interceptors.response.use(
         // Save new token to localstorage
         localStorage.setItem('token', token);
         
+        processQueue(null, token);
+        
         // Retry the original request with the new authorization header
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return API(originalRequest);
       } catch (refreshError) {
+        processQueue(refreshError, null);
         // If refresh fails, clear token and redirect to login
         localStorage.removeItem('token');
         window.location.href = '/login';
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
     

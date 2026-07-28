@@ -16,7 +16,7 @@ import {
   getWorkspaceAnalytics,
   getWorkspaceActivities
 } from '../controllers/workspaceController.js';
-import { protect } from '../middlewares/auth.js';
+import { protect, restrictTo } from '../middlewares/auth.js';
 import { isWorkspaceMember, isWorkspaceAdmin } from '../middlewares/workspaceAuth.js';
 
 const router = express.Router();
@@ -24,7 +24,7 @@ const router = express.Router();
 // Apply auth protector to all workspace routes
 router.use(protect);
 
-router.post('/', createWorkspace);
+router.post('/', restrictTo('Admin', 'Team Lead'), createWorkspace);
 router.get('/', getMyWorkspaces);
 router.post('/join', joinWorkspace);
 

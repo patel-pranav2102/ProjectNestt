@@ -68,3 +68,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Phase completion files
+phase*_completion.txt

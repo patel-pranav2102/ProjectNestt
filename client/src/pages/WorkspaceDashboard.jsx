@@ -57,22 +57,7 @@ const WorkspaceDashboard = () => {
     alert('Invite code copied to clipboard!');
   };
 
-  // 2. Regenerate Invite Code Mutation
-  const regenerateCodeMutation = useMutation({
-    mutationFn: () => regenerateInvite(id),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['workspace', id], (old) => {
-        return {
-          ...old,
-          workspace: {
-            ...old.workspace,
-            inviteCode: data.inviteCode,
-          },
-        };
-      });
-      alert('Invite code regenerated successfully.');
-    },
-  });
+
 
   // 3. Update Workspace Details Mutation
   const updateWorkspaceMutation = useMutation({
@@ -249,18 +234,7 @@ const WorkspaceDashboard = () => {
             </button>
           </div>
 
-          {isAdmin && (
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              onClick={() => regenerateCodeMutation.mutate()}
-              isLoading={regenerateCodeMutation.isPending}
-              className="w-full text-xs"
-            >
-              <RefreshCw size={12} className="mr-1.5 animate-in spin-in-12" />
-              <span>Regenerate Invite Code</span>
-            </Button>
-          )}
+
         </div>
 
         {/* Right Column: Member list */}

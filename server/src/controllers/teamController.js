@@ -1,5 +1,7 @@
 import Team from '../models/Team.js';
 import Workspace from '../models/Workspace.js';
+import User from '../models/User.js';
+import { emitNotification } from '../sockets/chatSocket.js';
 import { 
   BadRequestError, 
   NotFoundError, 
@@ -136,6 +138,25 @@ export const addTeamMember = async (req, res, next) => {
     // Add member
     team.members.push({ userId, role: role || 'Member' });
     await team.save();
+
+    // Trigger notification for the added team member
+    const io = req.app.get('io');
+    if (io) {
+      try {
+        const addedByUser = await User.findById(req.user.id);
+        const addedByUserName = addedByUser ? addedByUser.name : 'an Administrator';
+        await emitNotification(io, {
+          recipient: userId,
+          type: 'team_added',
+          message: `You have been added to the team: "${team.name}" by ${addedByUserName}.`,
+          link: `/workspace/${workspace._id}`,
+          workspaceId: workspace._id,
+          triggeredBy: req.user.id,
+        });
+      } catch (err) {
+        console.error('Failed to send team added notification:', err.message);
+      }
+    }
 
     res.status(200).json({
       status: 'success',

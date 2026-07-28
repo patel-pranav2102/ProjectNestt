@@ -128,9 +128,10 @@ export const deleteMeeting = async (req, res, next) => {
     const member = workspace.members.find(m => m.userId.toString() === req.user.id);
     const isOwner = workspace.owner.toString() === req.user.id;
     const isAdmin = member && member.role === 'Admin';
+    const isTeamLeadOrAdminGlobal = req.user && (req.user.role === 'Team Lead' || req.user.role === 'Admin');
 
-    if (!isOwner && !isAdmin) {
-      throw new ForbiddenError('Administrative privileges are required to delete meetings.');
+    if (!isOwner && !isAdmin && !isTeamLeadOrAdminGlobal) {
+      throw new ForbiddenError('Administrative or Team Lead privileges are required to delete meetings.');
     }
 
     await Meeting.findByIdAndDelete(id);

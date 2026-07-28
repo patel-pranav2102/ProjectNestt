@@ -7,6 +7,7 @@ import {
   setActiveWorkspace, 
   addWorkspace 
 } from '../../features/workspaceSlice.js';
+import { selectCurrentUser } from '../../features/authSlice.js';
 import { createWorkspace, joinWorkspace } from '../../services/workspaceService.js';
 import Button from '../common/Button.jsx';
 import Input from '../common/Input.jsx';
@@ -18,6 +19,7 @@ const WorkspaceSwitcher = () => {
   
   const workspaces = useSelector(selectWorkspaces);
   const activeWorkspace = useSelector(selectActiveWorkspace);
+  const currentUser = useSelector(selectCurrentUser);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -112,13 +114,15 @@ const WorkspaceSwitcher = () => {
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2 pt-2 border-t border-slate-900">
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-purple hover:bg-brand-purple/10 transition-colors w-full text-left"
-        >
-          <Plus size={14} />
-          <span>New Workspace</span>
-        </button>
+        {currentUser?.role !== 'Developer' && (
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-purple hover:bg-brand-purple/10 transition-colors w-full text-left"
+          >
+            <Plus size={14} />
+            <span>New Workspace</span>
+          </button>
+        )}
         <button 
           onClick={() => setShowJoinModal(true)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-cyan hover:bg-brand-cyan/10 transition-colors w-full text-left"

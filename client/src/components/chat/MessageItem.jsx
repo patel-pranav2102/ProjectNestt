@@ -68,6 +68,21 @@ const MessageItem = ({ message, onReply }) => {
     }
   };
 
+  // Scroll viewport to focus parent message
+  const handleScrollToParent = () => {
+    const parentId = message.parentId?._id;
+    if (!parentId) return;
+
+    const element = document.getElementById(`message-${parentId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('bg-brand-purple/20', 'ring-1', 'ring-brand-purple/30');
+      setTimeout(() => {
+        element.classList.remove('bg-brand-purple/20', 'ring-1', 'ring-brand-purple/30');
+      }, 1500);
+    }
+  };
+
   // Group reactions for visual display
   const reactionGroups = message.reactions?.reduce((acc, current) => {
     acc[current.emoji] = acc[current.emoji] || [];
@@ -76,8 +91,11 @@ const MessageItem = ({ message, onReply }) => {
   }, {});
 
   return (
-    <div className={`group flex gap-3 p-3 hover:bg-slate-900/40 rounded-xl transition-colors relative text-left w-full
-      ${message.isPinned ? 'bg-brand-purple/5 border-l-2 border-l-brand-purple' : ''}`}>
+    <div 
+      id={`message-${message._id}`}
+      className={`group flex gap-3 p-3 hover:bg-slate-900/40 rounded-xl transition-all duration-300 relative text-left w-full
+        ${message.isPinned ? 'bg-brand-purple/5 border-l-2 border-l-brand-purple' : ''}`}
+    >
       
       {/* Sender Avatar */}
       <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-800 shrink-0 border border-slate-700 flex items-center justify-center font-bold text-sm text-white">
@@ -102,7 +120,11 @@ const MessageItem = ({ message, onReply }) => {
         </div>
 
         {message.parentId && typeof message.parentId === 'object' && (
-          <div className="mb-2 p-2.5 rounded-lg bg-slate-900/45 border border-slate-900 border-l-2 border-l-brand-purple text-xs text-left max-w-xl self-start">
+          <div 
+            onClick={handleScrollToParent}
+            className="mb-2 p-2.5 rounded-lg bg-slate-900/45 border border-slate-900 border-l-2 border-l-brand-purple text-xs text-left max-w-xl self-start cursor-pointer hover:bg-slate-900/70 transition-colors"
+            title="Jump to message"
+          >
             <span className="text-[9px] font-bold text-brand-purple uppercase tracking-wider block">
               {message.parentId.senderId?.name || 'User'}
             </span>

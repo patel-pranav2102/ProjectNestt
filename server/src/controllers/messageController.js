@@ -85,6 +85,16 @@ export const sendMessage = async (req, res, next) => {
         populate: { path: 'senderId', select: 'name email avatarUrl status' }
       });
 
+    // Broadcast the attachment message via Socket.io
+    const io = req.app.get('io');
+    if (io) {
+      if (channelId) {
+        io.to(`channel:${channelId}`).emit('messageReceived', populatedMessage);
+      } else if (receiverId) {
+        io.to(`user:${receiverId}`).to(`user:${req.user.id}`).emit('messageReceived', populatedMessage);
+      }
+    }
+
     res.status(201).json({
       status: 'success',
       message: populatedMessage,
