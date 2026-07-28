@@ -1,5 +1,7 @@
 import Notification from '../models/Notification.js';
-import { NotFoundError, ForbiddenError } from '../utils/errors.js';
+import Workspace from '../models/Workspace.js';
+import Team from '../models/Team.js';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors.js';
 
 // 1. GET MY NOTIFICATIONS (paginated, newest first)
 export const getMyNotifications = async (req, res, next) => {
@@ -83,6 +85,84 @@ export const deleteNotification = async (req, res, next) => {
     await notification.deleteOne();
 
     res.status(200).json({ status: 'success', message: 'Notification deleted.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 5. ACCEPT WORKSPACE OR TEAM INVITATION
+export const acceptInvite = async (req, res, next) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      throw new NotFoundError('Notification not found.');
+    }
+    if (notification.recipient.toString() !== req.user.id) {
+      throw new ForbiddenError('Not authorised to accept this invitation.');
+    }
+
+    if (notification.type === 'workspace_invite') {
+      const workspace = await Workspace.findById(notification.workspaceId);
+      if (!workspace) {
+        throw new NotFoundError('Workspace not found.');
+      }
+
+      // Check if already a member
+      const isMember = workspace.members.some(m => m.userId.toString() === req.user.id);
+      if (!isMember) {
+        workspace.members.push({ userId: req.user.id, role: 'Member' });
+        await workspace.save();
+      }
+    } else if (notification.type === 'team_invite') {
+      const team = await Team.findById(notification.teamId);
+      if (!team) {
+        throw new NotFoundError('Team not found.');
+      }
+
+      // Check if already in team
+      const isMember = team.members.some(m => m.userId.toString() === req.user.id);
+      if (!isMember) {
+        team.members.push({ userId: req.user.id, role: 'Member' });
+        await team.save();
+      }
+    } else {
+      throw new BadRequestError('This notification is not an invitation.');
+    }
+
+    // Delete invitation notification upon acceptance
+    await notification.deleteOne();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Invitation accepted successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 6. DECLINE WORKSPACE OR TEAM INVITATION
+export const declineInvite = async (req, res, next) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      throw new NotFoundError('Notification not found.');
+    }
+    if (notification.recipient.toString() !== req.user.id) {
+      throw new ForbiddenError('Not authorised to decline this invitation.');
+    }
+
+    if (notification.type !== 'workspace_invite' && notification.type !== 'team_invite') {
+      throw new BadRequestError('This notification is not an invitation.');
+    }
+
+    // Delete the notification on decline
+    await notification.deleteOne();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Invitation declined successfully.',
+    });
   } catch (error) {
     next(error);
   }

@@ -9,6 +9,8 @@ import Drawing from '../models/Drawing.js';
 import Channel from '../models/Channel.js';
 import ActivityModel from '../models/Activity.js';
 import FileModel from '../models/File.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { logActivity } from '../utils/activityLogger.js';
 import { emitNotification } from '../sockets/chatSocket.js';
 import {
@@ -152,6 +154,74 @@ export const joinWorkspace = async (req, res, next) => {
       status: 'success',
       message: `Successfully joined workspace: ${workspace.name}`,
       workspaceId: workspace._id,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Invite a member to the workspace via notification invite
+export const inviteWorkspaceMember = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const workspaceId = req.params.id;
+
+    if (!email) {
+      throw new BadRequestError('Email address is required.');
+    }
+
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      throw new NotFoundError('Workspace not found.');
+    }
+
+    // Find the user by email
+    const userToInvite = await User.findOne({ email });
+    if (!userToInvite) {
+      throw new NotFoundError('User with this email address was not found.');
+    }
+
+    // Check if the user is already a member
+    const isMember = workspace.members.some(m => m.userId.toString() === userToInvite._id.toString());
+    if (isMember) {
+      throw new BadRequestError('User is already a member of this workspace.');
+    }
+
+    // Check if there is already a pending invitation
+    const existingInvite = await Notification.findOne({
+      recipient: userToInvite._id,
+      type: 'workspace_invite',
+      workspaceId: workspace._id,
+      isRead: false,
+    });
+    if (existingInvite) {
+      throw new BadRequestError('An invitation to this workspace is already pending for this user.');
+    }
+
+    // Get the name of the inviter
+    const inviter = await User.findById(req.user.id);
+    const inviterName = inviter ? inviter.name : 'An Administrator';
+
+    // Create and emit the notification
+    const io = req.app.get('io');
+    if (io) {
+      try {
+        await emitNotification(io, {
+          recipient: userToInvite._id,
+          type: 'workspace_invite',
+          message: `You have been invited to join the workspace: "${workspace.name}" by ${inviterName}.`,
+          link: `/dashboard`,
+          workspaceId: workspace._id,
+          triggeredBy: req.user.id,
+        });
+      } catch (err) {
+        console.error('Failed to emit workspace invite notification:', err.message);
+      }
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: `Invitation successfully sent to ${userToInvite.name}.`,
     });
   } catch (error) {
     next(error);

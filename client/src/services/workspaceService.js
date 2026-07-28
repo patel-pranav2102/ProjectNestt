@@ -53,3 +53,8 @@ export const searchWorkspace = async (id, params = {}) => {
   return response.data;
 };
 
+export const inviteMemberToWorkspace = async (workspaceId, email) => {
+  const response = await API.post(`/workspaces/${workspaceId}/invites`, { email });
+  return response.data;
+};
+

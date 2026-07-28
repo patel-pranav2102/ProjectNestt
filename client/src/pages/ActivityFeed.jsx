@@ -18,6 +18,8 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotificationById,
+  acceptInvite,
+  declineInvite,
 } from '../services/notificationService.js';
 
 /* ── type metadata ────────────────────────────────────────── */
@@ -28,6 +30,7 @@ const TYPE_META = {
   doc_shared:       { icon: FileText,      color: 'text-amber-400',   bg: 'bg-amber-500/10',   label: 'Document Shared'   },
   channel_mention:  { icon: MessageSquare, color: 'text-brand-cyan',  bg: 'bg-brand-cyan/10',  label: 'Channel Mention'   },
   workspace_invite: { icon: Users,         color: 'text-rose-400',    bg: 'bg-rose-500/10',    label: 'Workspace Invite'  },
+  team_invite:      { icon: Users,         color: 'text-brand-purple',bg: 'bg-brand-purple/10', font: 'font-display', label: 'Team Invite' },
   meeting_invite:    { icon: Video,         color: 'text-brand-cyan',  bg: 'bg-brand-cyan/10',  label: 'Meeting Invite'    },
 };
 
@@ -37,7 +40,8 @@ const FILTER_OPTIONS = [
   { value: 'task_assigned',    label: 'Tasks'     },
   { value: 'doc_shared',       label: 'Documents' },
   { value: 'channel_mention',  label: 'Mentions'  },
-  { value: 'workspace_invite', label: 'Invites'   },
+  { value: 'workspace_invite', label: 'Workspace Invites' },
+  { value: 'team_invite',      label: 'Team Invites' },
   { value: 'meeting_invite',    label: 'Meetings'  },
 ];
 
@@ -104,6 +108,33 @@ const ActivityFeed = () => {
   const handleDelete = async (id) => {
     dispatch(removeNotification(id));
     try { await deleteNotificationById(id); } catch { /* silent */ }
+  };
+
+  const handleAcceptInvite = async (e, id, type) => {
+    e.stopPropagation();
+    try {
+      await acceptInvite(id);
+      dispatch(removeNotification(id));
+      alert('Invitation accepted successfully.');
+      if (type === 'workspace_invite') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to accept invitation.');
+    }
+  };
+
+  const handleDeclineInvite = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await declineInvite(id);
+      dispatch(removeNotification(id));
+      alert('Invitation declined successfully.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to decline invitation.');
+    }
   };
 
   const handleClick = (notif) => {
@@ -208,6 +239,22 @@ const ActivityFeed = () => {
                 <p className={`text-xs leading-snug ${notif.isRead ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
                   {notif.message}
                 </p>
+                {(notif.type === 'workspace_invite' || notif.type === 'team_invite') && (
+                  <div className="flex gap-2 mt-2 mb-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={(e) => handleAcceptInvite(e, notif._id, notif.type)}
+                      className="px-3 py-1 rounded-xl bg-brand-purple text-[10px] font-bold text-white hover:bg-brand-purple/80 transition-colors"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={(e) => handleDeclineInvite(e, notif._id)}
+                      className="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-bold text-slate-300 hover:bg-slate-700 transition-colors"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="text-[9px] text-slate-600">{relTime(notif.createdAt)}</span>
                   {meta.label && (

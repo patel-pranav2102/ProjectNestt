@@ -13,7 +13,7 @@ import {
   setWorkspaces,
   selectWorkspaces,
 } from '../features/workspaceSlice.js';
-import { fetchWorkspaceDetails, updateWorkspace, regenerateInvite, deleteWorkspace, leaveWorkspace } from '../services/workspaceService.js';
+import { fetchWorkspaceDetails, updateWorkspace, regenerateInvite, deleteWorkspace, leaveWorkspace, inviteMemberToWorkspace } from '../services/workspaceService.js';
 import { updateMemberRole, removeMember } from '../services/memberService.js';
 
 /* ─── Tab definitions ────────────────────────────────────── */
@@ -51,6 +51,10 @@ const WorkspaceSettings = () => {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [roleLoading, setRoleLoading] = useState(null); // userId being updated
   const [removeLoading, setRemoveLoading] = useState(null);
+  
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState('');
 
   /* ── Fetch workspace details ── */
   const { data, refetch } = useQuery({
@@ -109,6 +113,24 @@ const WorkspaceSettings = () => {
       await regenerateInvite(workspaceId);
       refetch();
     } catch { /* silent */ }
+  };
+
+  /* ── Members: invite user by email ── */
+  const handleInviteMember = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    setInviteLoading(true);
+    setInviteMsg('');
+    try {
+      const res = await inviteMemberToWorkspace(workspaceId, inviteEmail);
+      setInviteMsg(res.message || 'Invitation sent successfully!');
+      setInviteEmail('');
+    } catch (err) {
+      setInviteMsg(err.response?.data?.message || 'Failed to send invitation.');
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   /* ── Members: change role ── */
@@ -248,6 +270,36 @@ const WorkspaceSettings = () => {
         {/* ────── MEMBERS TAB ────── */}
         {tab === 'members' && (
           <div className="flex flex-col gap-5 max-w-2xl">
+
+            {/* Direct Member Invitation Card */}
+            {isAdmin && (
+              <div className="glass-panel rounded-2xl p-5 border-slate-900/60 flex flex-col gap-3">
+                <h3 className="text-sm font-bold text-white font-display">Invite Member directly</h3>
+                <p className="text-xs text-slate-500">Send an invitation notification to a user's email to add them to this workspace.</p>
+                <form onSubmit={handleInviteMember} className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-brand-purple"
+                  />
+                  <button
+                    type="submit"
+                    disabled={inviteLoading}
+                    className="px-5 py-2.5 rounded-xl bg-brand-purple text-white text-xs font-bold hover:bg-brand-purple/80 transition-colors disabled:opacity-50"
+                  >
+                    {inviteLoading ? 'Sending...' : 'Send Invite'}
+                  </button>
+                </form>
+                {inviteMsg && (
+                  <span className={`text-[11px] font-medium ${inviteMsg.includes('successfully') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {inviteMsg}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Invite Code Card */}
             <div className="glass-panel rounded-2xl p-5 border-slate-900/60 flex flex-col gap-3">

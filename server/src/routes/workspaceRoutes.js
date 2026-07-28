@@ -5,6 +5,7 @@ import {
   getWorkspaceDetails,
   updateWorkspace,
   joinWorkspace,
+  inviteWorkspaceMember,
   leaveWorkspace,
   regenerateInviteCode,
   deleteWorkspace,
@@ -37,6 +38,7 @@ router.get('/:id/activities', isWorkspaceMember, getWorkspaceActivities);
 router.put('/:id', isWorkspaceMember, isWorkspaceAdmin, updateWorkspace);
 router.delete('/:id', isWorkspaceMember, isWorkspaceAdmin, deleteWorkspace);
 router.post('/:id/invite', isWorkspaceMember, isWorkspaceAdmin, regenerateInviteCode);
+router.post('/:id/invites', isWorkspaceMember, isWorkspaceAdmin, inviteWorkspaceMember);
 router.post('/:id/leave', isWorkspaceMember, leaveWorkspace);
 router.patch('/:id/members/:userId/role', isWorkspaceMember, isWorkspaceAdmin, updateMemberRole);
 router.delete('/:id/members/:userId', isWorkspaceMember, isWorkspaceAdmin, removeMember);

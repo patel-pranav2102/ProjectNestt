@@ -17,6 +17,7 @@ const notificationSchema = new mongoose.Schema(
         'doc_shared',
         'channel_mention',
         'workspace_invite',
+        'team_invite',
         'meeting_invite',
       ],
       required: true,
@@ -37,6 +38,10 @@ const notificationSchema = new mongoose.Schema(
     workspaceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Workspace',
+    },
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team',
     },
     triggeredBy: {
       type: mongoose.Schema.Types.ObjectId,

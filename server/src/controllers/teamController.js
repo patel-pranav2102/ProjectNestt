@@ -1,6 +1,7 @@
 import Team from '../models/Team.js';
 import Workspace from '../models/Workspace.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { emitNotification } from '../sockets/chatSocket.js';
 import { 
   BadRequestError, 
@@ -135,11 +136,19 @@ export const addTeamMember = async (req, res, next) => {
       throw new BadRequestError('User is already a member of this team.');
     }
 
-    // Add member
-    team.members.push({ userId, role: role || 'Member' });
-    await team.save();
+    // Check if there is already a pending invitation
+    const existingInvite = await Notification.findOne({
+      recipient: userId,
+      type: 'team_invite',
+      workspaceId: workspace._id,
+      teamId: team._id,
+      isRead: false,
+    });
+    if (existingInvite) {
+      throw new BadRequestError('An invitation to this team is already pending for this user.');
+    }
 
-    // Trigger notification for the added team member
+    // Trigger notification for the team invite
     const io = req.app.get('io');
     if (io) {
       try {
@@ -147,21 +156,21 @@ export const addTeamMember = async (req, res, next) => {
         const addedByUserName = addedByUser ? addedByUser.name : 'an Administrator';
         await emitNotification(io, {
           recipient: userId,
-          type: 'team_added',
-          message: `You have been added to the team: "${team.name}" by ${addedByUserName}.`,
-          link: `/workspace/${workspace._id}`,
+          type: 'team_invite',
+          message: `You have been invited to join the team: "${team.name}" by ${addedByUserName}.`,
+          link: `/workspace/${workspace._id}/team/${team._id}`,
           workspaceId: workspace._id,
+          teamId: team._id,
           triggeredBy: req.user.id,
         });
       } catch (err) {
-        console.error('Failed to send team added notification:', err.message);
+        console.error('Failed to send team invite notification:', err.message);
       }
     }
 
     res.status(200).json({
       status: 'success',
-      message: 'Member added to team successfully.',
-      team,
+      message: 'Invitation sent to the user successfully.',
     });
   } catch (error) {
     next(error);

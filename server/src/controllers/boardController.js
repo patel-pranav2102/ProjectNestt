@@ -35,7 +35,7 @@ export const createBoard = async (req, res, next) => {
     const board = new Board({
       projectId,
       name,
-      columns: columns && Array.isArray(columns) ? columns : ['To Do', 'In Progress', 'Done'],
+      columns: columns && Array.isArray(columns) ? columns : ['To Do', 'In Progress', 'Testing', 'Done'],
     });
 
     await board.save();

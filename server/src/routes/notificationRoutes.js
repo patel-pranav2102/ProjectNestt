@@ -4,6 +4,8 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  acceptInvite,
+  declineInvite
 } from '../controllers/notificationController.js';
 import { protect } from '../middlewares/auth.js';
 
@@ -16,5 +18,7 @@ router.get('/',                   getMyNotifications);
 router.patch('/read-all',         markAllAsRead);
 router.patch('/:id/read',         markAsRead);
 router.delete('/:id',             deleteNotification);
+router.post('/:id/accept',        acceptInvite);
+router.post('/:id/decline',       declineInvite);
 
 export default router;

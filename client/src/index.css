@@ -86,3 +86,22 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Kanban card hover shadow glow  */
+.kanban-card-hover:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Smooth card drag ghost */
+[draggable='true'] {
+  user-select: none;
+}
+
+/* Kanban column drop zone pulse ring */
+@keyframes drop-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(139,92,246,0.12); }
+}
+.drop-active {
+  animation: drop-ring 1.2s ease-in-out infinite;
+}

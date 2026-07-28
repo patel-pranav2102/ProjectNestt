@@ -13,7 +13,8 @@ import {
   toggleCardAssignee, 
   postCardComment, 
   removeCardComment,
-  deleteCardDetails 
+  deleteCardDetails,
+  fetchCardDetails
 } from '../../services/kanbanService.js';
 import Button from '../common/Button.jsx';
 import { X, Calendar, User, Tag, Clock, Trash2, Edit2, Plus, MessageSquare } from 'lucide-react';
@@ -25,6 +26,10 @@ const CardDetailsModal = () => {
   const activeWorkspace = useSelector(selectActiveWorkspace);
   const currentUser = useSelector(selectCurrentUser);
 
+  const isWSAdmin = activeWorkspace?.owner === currentUser?.id || 
+    activeWorkspace?.members?.find(m => (m.userId?._id || m.userId) === currentUser?.id || m.userId === currentUser?.id)?.role === 'Admin';
+  const canAssignOthers = currentUser?.role === 'Team Lead' || currentUser?.role === 'Admin' || isWSAdmin;
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [cardTitle, setCardTitle] = useState('');
   
@@ -35,6 +40,19 @@ const CardDetailsModal = () => {
   const [newLabel, setNewLabel] = useState('');
   
   const [loading, setLoading] = useState(false);
+  const [fullCard, setFullCard] = useState(null);
+
+  // Fetch fully-populated card (with activityLog.userId populated) when modal opens
+  useEffect(() => {
+    if (activeCard?._id) {
+      setFullCard(null); // reset while loading
+      fetchCardDetails(activeCard._id)
+        .then(data => setFullCard(data.card))
+        .catch(() => setFullCard(activeCard)); // fallback to Redux card on error
+    } else {
+      setFullCard(null);
+    }
+  }, [activeCard?._id]);
 
   useEffect(() => {
     if (activeCard) {
@@ -45,12 +63,16 @@ const CardDetailsModal = () => {
     }
   }, [activeCard]);
 
+  // Always read audit log from fullCard (which has populated userId)
+  const displayCard = fullCard || activeCard;
+
   if (!activeCard) return null;
 
   const handleUpdateDetails = async (updates) => {
     try {
       const data = await updateCardDetails(activeCard._id, updates);
       dispatch(updateCardState(data.card));
+      setFullCard(data.card);
     } catch (err) {
       alert('Failed to update card details.');
     }
@@ -69,9 +91,14 @@ const CardDetailsModal = () => {
 
   // Toggle Assignee
   const handleToggleAssignee = async (userId) => {
+    if (!canAssignOthers && userId !== currentUser?.id) {
+      alert('Developers cannot assign tasks to others.');
+      return;
+    }
     try {
       const data = await toggleCardAssignee(activeCard._id, userId);
       dispatch(updateCardState(data.card));
+      setFullCard(data.card);
     } catch (err) {
       alert('Failed to update task assignees.');
     }
@@ -106,6 +133,7 @@ const CardDetailsModal = () => {
     try {
       const data = await postCardComment(activeCard._id, newComment);
       dispatch(updateCardState(data.card));
+      setFullCard(data.card);
       setNewComment('');
     } catch (err) {
       alert('Failed to post comment.');
@@ -119,6 +147,7 @@ const CardDetailsModal = () => {
     try {
       const data = await removeCardComment(activeCard._id, commentId);
       dispatch(updateCardState(data.card));
+      setFullCard(data.card);
     } catch (err) {
       alert('Failed to delete comment.');
     }
@@ -266,10 +295,23 @@ const CardDetailsModal = () => {
               </h3>
 
               <div className="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1">
-                {activeCard.activityLog?.map((act) => (
+                {!fullCard && (
+                  <p className="text-[10px] text-slate-600 italic">Loading activity...</p>
+                )}
+                {displayCard.activityLog?.map((act) => (
                   <div key={act._id} className="text-[10px] text-slate-500 flex items-start justify-between gap-4">
                     <span className="leading-relaxed">
-                      <strong className="text-slate-400">{act.userId?.name || 'Developer'}</strong>: {act.action} ({act.details})
+                      <strong className="text-slate-300">{act.userId?.name || 'Unknown User'}</strong>
+                      {act.userId?.role && (
+                        <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold inline-block
+                          ${act.userId.role === 'Admin' ? 'bg-rose-500/20 text-rose-400' :
+                            act.userId.role === 'Team Lead' ? 'bg-brand-purple/20 text-brand-purple' :
+                            'bg-brand-cyan/15 text-brand-cyan'}`}>
+                          {act.userId.role}
+                        </span>
+                      )}
+                      <span className="text-slate-500 ml-1">— {act.action}</span>
+                      {act.details && <span className="text-slate-600 ml-1">({act.details})</span>}
                     </span>
                     <span className="text-[9px] text-slate-600 flex-shrink-0">{new Date(act.createdAt).toLocaleDateString()}</span>
                   </div>
@@ -293,13 +335,17 @@ const CardDetailsModal = () => {
                 {workspaceUsers.map(wm => {
                   const u = wm.userId && typeof wm.userId === 'object' ? wm.userId : null;
                   if (!u || !u.name) return null;
+                  if (u.role !== 'Developer') return null;
                   const isAssigned = activeCard.assignees?.some(a => a._id === u._id);
+                  const isDisabled = !canAssignOthers && u._id !== currentUser?.id;
 
                   return (
                     <button
                       key={u._id}
+                      disabled={isDisabled}
                       onClick={() => handleToggleAssignee(u._id)}
                       className={`flex items-center justify-between px-2 py-1 rounded text-xs text-left transition-colors w-full
+                        ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                         ${isAssigned ? 'bg-brand-purple/10 text-white font-medium' : 'text-slate-400 hover:bg-slate-850 hover:text-slate-200'}`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -315,8 +361,9 @@ const CardDetailsModal = () => {
                       <input 
                         type="checkbox" 
                         checked={isAssigned} 
+                        disabled={isDisabled}
                         onChange={() => {}} // Controlled via button click
-                        className="w-3.5 h-3.5 rounded border-slate-800 text-brand-purple focus:ring-brand-purple scale-75"
+                        className="w-3.5 h-3.5 rounded border-slate-800 text-brand-purple focus:ring-brand-purple scale-75 cursor-pointer disabled:cursor-not-allowed"
                       />
                     </button>
                   );

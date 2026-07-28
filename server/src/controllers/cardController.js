@@ -46,10 +46,11 @@ export const createCard = async (req, res, next) => {
     });
 
     await card.save();
+    const populated = await card.populate('assignees', 'name email avatarUrl');
 
     res.status(201).json({
       status: 'success',
-      card,
+      card: populated,
     });
   } catch (error) {
     next(error);
@@ -64,7 +65,7 @@ export const getCardDetails = async (req, res, next) => {
     const card = await Card.findById(id)
       .populate('assignees', 'name email avatarUrl status')
       .populate('comments.userId', 'name email avatarUrl')
-      .populate('activityLog.userId', 'name email avatarUrl');
+      .populate('activityLog.userId', 'name email avatarUrl role');
 
     if (!card) {
       throw new NotFoundError('Card not found.');
@@ -121,7 +122,7 @@ export const updateCard = async (req, res, next) => {
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
       .populate('comments.userId', 'name email avatarUrl')
-      .populate('activityLog.userId', 'name email avatarUrl');
+      .populate('activityLog.userId', 'name email avatarUrl role');
 
     res.status(200).json({
       status: 'success',
@@ -207,7 +208,7 @@ export const assignMember = async (req, res, next) => {
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
       .populate('comments.userId', 'name email avatarUrl')
-      .populate('activityLog.userId', 'name email avatarUrl');
+      .populate('activityLog.userId', 'name email avatarUrl role');
 
     res.status(200).json({
       status: 'success',
@@ -249,7 +250,7 @@ export const addComment = async (req, res, next) => {
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
       .populate('comments.userId', 'name email avatarUrl')
-      .populate('activityLog.userId', 'name email avatarUrl');
+      .populate('activityLog.userId', 'name email avatarUrl role');
 
     res.status(200).json({
       status: 'success',
@@ -286,7 +287,7 @@ export const deleteComment = async (req, res, next) => {
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
       .populate('comments.userId', 'name email avatarUrl')
-      .populate('activityLog.userId', 'name email avatarUrl');
+      .populate('activityLog.userId', 'name email avatarUrl role');
 
     res.status(200).json({
       status: 'success',

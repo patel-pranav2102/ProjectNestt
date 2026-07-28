@@ -16,7 +16,7 @@ const boardSchema = new mongoose.Schema(
     },
     columns: {
       type: [String],
-      default: ['To Do', 'In Progress', 'Done'],
+      default: ['To Do', 'In Progress', 'Testing', 'Done'],
     },
   },
   {

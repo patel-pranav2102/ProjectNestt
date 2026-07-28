@@ -16,6 +16,8 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotificationById,
+  acceptInvite,
+  declineInvite,
 } from '../../services/notificationService.js';
 
 /* ── type → icon map ──────────────────────────────────────── */
@@ -26,6 +28,7 @@ const TYPE_ICON = {
   doc_shared:       <FileText      size={13} className="text-amber-400 shrink-0" />,
   channel_mention:  <MessageSquare size={13} className="text-brand-cyan shrink-0" />,
   workspace_invite: <Users         size={13} className="text-rose-400 shrink-0" />,
+  team_invite:      <Users         size={13} className="text-brand-purple shrink-0" />,
   meeting_invite:    <Video         size={13} className="text-brand-cyan shrink-0" />,
 };
 
@@ -73,6 +76,33 @@ const NotificationBell = () => {
     e.stopPropagation();
     dispatch(removeNotification(id));
     try { await deleteNotificationById(id); } catch { /* silent */ }
+  };
+
+  const handleAcceptInvite = async (e, id, type) => {
+    e.stopPropagation();
+    try {
+      await acceptInvite(id);
+      dispatch(removeNotification(id));
+      alert('Invitation accepted successfully.');
+      if (type === 'workspace_invite') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to accept invitation.');
+    }
+  };
+
+  const handleDeclineInvite = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await declineInvite(id);
+      dispatch(removeNotification(id));
+      alert('Invitation declined successfully.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to decline invitation.');
+    }
   };
 
   const handleClick = (notif) => {
@@ -144,6 +174,22 @@ const NotificationBell = () => {
                     <p className={`text-[11px] leading-snug ${notif.isRead ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
                       {notif.message}
                     </p>
+                    {(notif.type === 'workspace_invite' || notif.type === 'team_invite') && (
+                      <div className="flex gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={(e) => handleAcceptInvite(e, notif._id, notif.type)}
+                          className="px-2 py-0.5 rounded bg-brand-purple text-[9px] font-bold text-white hover:bg-brand-purple/80 transition-colors"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={(e) => handleDeclineInvite(e, notif._id)}
+                          className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[9px] font-bold text-slate-300 hover:bg-slate-700 transition-colors"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
                     <span className="text-[9px] text-slate-600 mt-0.5 block">{relTime(notif.createdAt)}</span>
                   </div>
 

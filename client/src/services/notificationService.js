@@ -22,3 +22,13 @@ export const deleteNotificationById = async (id) => {
   const response = await API.delete(`/notifications/${id}`);
   return response.data;
 };
+
+export const acceptInvite = async (id) => {
+  const response = await API.post(`/notifications/${id}/accept`);
+  return response.data;
+};
+
+export const declineInvite = async (id) => {
+  const response = await API.post(`/notifications/${id}/decline`);
+  return response.data;
+};
