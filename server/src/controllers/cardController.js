@@ -1,10 +1,37 @@
 import Card from '../models/Card.js';
 import Board from '../models/Board.js';
+import Project from '../models/Project.js';
+import { emitNotification } from '../sockets/chatSocket.js';
 import { 
   BadRequestError, 
   NotFoundError, 
   ForbiddenError 
 } from '../utils/errors.js';
+
+// Helper to send real-time notification to assigned developers
+const notifyAssigneesOfTask = async (io, assigneeIds, cardName, workspaceId, triggeredById) => {
+  if (!io || !assigneeIds || !Array.isArray(assigneeIds) || assigneeIds.length === 0) return;
+
+  for (const assigneeId of assigneeIds) {
+    const recipientStr = assigneeId.toString();
+    const triggerStr = triggeredById?.toString();
+
+    // Skip self-assignment notifications
+    if (recipientStr === triggerStr) continue;
+
+    try {
+      await emitNotification(io, {
+        recipient: assigneeId,
+        type: 'task_assigned',
+        message: `You were assigned to task "${cardName}"`,
+        workspaceId: workspaceId || null,
+        triggeredBy: triggeredById,
+      });
+    } catch (err) {
+      console.error('[notifyAssigneesOfTask] error:', err.message);
+    }
+  }
+};
 
 // 1. CREATE CARD
 export const createCard = async (req, res, next) => {
@@ -48,6 +75,17 @@ export const createCard = async (req, res, next) => {
     await card.save();
     const populated = await card.populate('assignees', 'name email avatarUrl');
 
+    // Notify assigned developers in real-time
+    if (assignees && assignees.length > 0) {
+      try {
+        const project = await Project.findById(board.projectId);
+        const io = req.app.get('io');
+        await notifyAssigneesOfTask(io, assignees, card.name, project?.workspaceId, req.user.id);
+      } catch (notifErr) {
+        console.error('Failed to send task assignment notification:', notifErr.message);
+      }
+    }
+
     res.status(201).json({
       status: 'success',
       card: populated,
@@ -84,7 +122,7 @@ export const getCardDetails = async (req, res, next) => {
 export const updateCard = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, dueDate, labels } = req.body;
+    const { name, description, dueDate, labels, assignees } = req.body;
 
     const card = await Card.findById(id);
     if (!card) {
@@ -109,6 +147,14 @@ export const updateCard = async (req, res, next) => {
       card.labels = labels;
     }
 
+    let newAssigneeIds = [];
+    if (assignees && Array.isArray(assignees)) {
+      const oldAssigneeStrs = card.assignees.map(a => a.toString());
+      newAssigneeIds = assignees.filter(aId => !oldAssigneeStrs.includes(aId.toString()));
+      card.assignees = assignees;
+      changedDetails.push('Assignees updated');
+    }
+
     if (changedDetails.length > 0) {
       card.activityLog.push({
         userId: req.user.id,
@@ -118,6 +164,18 @@ export const updateCard = async (req, res, next) => {
     }
 
     await card.save();
+
+    // Send notifications to newly assigned members
+    if (newAssigneeIds.length > 0) {
+      try {
+        const board = await Board.findById(card.boardId);
+        const project = board ? await Project.findById(board.projectId) : null;
+        const io = req.app.get('io');
+        await notifyAssigneesOfTask(io, newAssigneeIds, card.name, project?.workspaceId, req.user.id);
+      } catch (notifErr) {
+        console.error('Failed to send update assignment notification:', notifErr.message);
+      }
+    }
 
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
@@ -169,7 +227,7 @@ export const moveCard = async (req, res, next) => {
   }
 };
 
-// 5. ASSIGN OR UNASSIGN MEMBER
+// 5. ASSIGN OR UNASSIGN MEMBER (Toggle single assignment)
 export const assignMember = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -185,8 +243,9 @@ export const assignMember = async (req, res, next) => {
     }
 
     const userIndex = card.assignees.indexOf(userId);
+    let isNewlyAssigned = false;
     let actionDetails = '';
-    
+
     if (userIndex !== -1) {
       // Unassign user
       card.assignees.splice(userIndex, 1);
@@ -194,6 +253,7 @@ export const assignMember = async (req, res, next) => {
     } else {
       // Assign user
       card.assignees.push(userId);
+      isNewlyAssigned = true;
       actionDetails = 'Assigned member';
     }
 
@@ -204,6 +264,18 @@ export const assignMember = async (req, res, next) => {
     });
 
     await card.save();
+
+    // Send real-time notification if user was newly assigned
+    if (isNewlyAssigned) {
+      try {
+        const board = await Board.findById(card.boardId);
+        const project = board ? await Project.findById(board.projectId) : null;
+        const io = req.app.get('io');
+        await notifyAssigneesOfTask(io, [userId], card.name, project?.workspaceId, req.user.id);
+      } catch (notifErr) {
+        console.error('Failed to send assignMember notification:', notifErr.message);
+      }
+    }
 
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')
@@ -246,6 +318,29 @@ export const addComment = async (req, res, next) => {
     });
 
     await card.save();
+
+    // Send real-time notification to card assignees when a comment is added
+    if (card.assignees && card.assignees.length > 0) {
+      try {
+        const board = await Board.findById(card.boardId);
+        const project = board ? await Project.findById(board.projectId) : null;
+        const io = req.app.get('io');
+
+        for (const assigneeId of card.assignees) {
+          if (assigneeId.toString() !== req.user.id.toString()) {
+            await emitNotification(io, {
+              recipient: assigneeId,
+              type: 'card_comment',
+              message: `New comment on task "${card.name}"`,
+              workspaceId: project?.workspaceId || null,
+              triggeredBy: req.user.id,
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error('Failed to send card comment notification:', notifErr.message);
+      }
+    }
 
     const populated = await Card.findById(card._id)
       .populate('assignees', 'name email avatarUrl status')

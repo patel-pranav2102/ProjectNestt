@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { selectActiveConversation } from '../../features/chatSlice.js';
-import { selectContacts } from '../../features/chatSlice.js';
+import { selectActiveConversation, selectContacts } from '../../features/chatSlice.js';
 import { selectCurrentUser } from '../../features/authSlice.js';
+import { selectActiveWorkspace } from '../../features/workspaceSlice.js';
 import { postNewMessage } from '../../services/chatService.js';
 import { socket } from '../../services/socketService.js';
 import { Paperclip, Send, Smile, X } from 'lucide-react';
@@ -10,6 +10,7 @@ import Button from '../common/Button.jsx';
 
 const MessageInput = ({ replyToMessage, setReplyToMessage }) => {
   const activeConversation = useSelector(selectActiveConversation);
+  const activeWorkspace = useSelector(selectActiveWorkspace);
   const contacts = useSelector(selectContacts);
   const currentUser = useSelector(selectCurrentUser);
 
@@ -104,6 +105,10 @@ const MessageInput = ({ replyToMessage, setReplyToMessage }) => {
         const formData = new FormData();
         formData.append('content', text);
         formData.append('file', selectedFile);
+
+        if (activeWorkspace?._id) {
+          formData.append('workspaceId', activeWorkspace._id);
+        }
 
         if (activeConversation.type === 'channel') {
           formData.append('channelId', activeConversation.id);

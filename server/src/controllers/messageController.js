@@ -14,6 +14,10 @@ export const sendMessage = async (req, res, next) => {
   try {
     const { channelId, receiverId, content, forwardedFrom, parentId } = req.body;
 
+    if (!channelId && !receiverId) {
+      throw new BadRequestError('Message must target a channel (channelId) or a user (receiverId).');
+    }
+
     if (!content && !req.file) {
       throw new BadRequestError('Message must contain text content or an attachment.');
     }
@@ -21,14 +25,33 @@ export const sendMessage = async (req, res, next) => {
     let attachments = [];
     if (req.file) {
       // Upload attachment to Cloudinary using file buffer
-      const uploadResult = await uploadBuffer(req.file.buffer, 'projectnest/attachments');
+      const uploadResult = await uploadBuffer(req.file.buffer, 'projectnest/attachments', req.file.mimetype);
       
       // Determine file type category
       let fileType = 'document';
-      if (req.file.mimetype.startsWith('image/')) {
+      const mime = (req.file.mimetype || '').toLowerCase();
+      const filename = (req.file.originalname || '').toLowerCase();
+      const ext = filename.split('.').pop();
+
+      if (mime.startsWith('image/')) {
         fileType = 'image';
-      } else if (req.file.mimetype.startsWith('video/')) {
+      } else if (mime.startsWith('video/')) {
         fileType = 'video';
+      } else if (mime === 'application/pdf' || ext === 'pdf') {
+        fileType = 'pdf';
+      } else if (
+        mime.includes('spreadsheet') ||
+        mime.includes('excel') ||
+        mime.includes('csv') ||
+        ['xls', 'xlsx', 'csv'].includes(ext)
+      ) {
+        fileType = 'spreadsheet';
+      } else if (
+        mime.includes('presentation') ||
+        mime.includes('powerpoint') ||
+        ['ppt', 'pptx'].includes(ext)
+      ) {
+        fileType = 'presentation';
       }
 
       attachments.push({
@@ -51,14 +74,24 @@ export const sendMessage = async (req, res, next) => {
 
     await message.save();
 
-    // Auto-register file in standalone collection if channelId exists
-    if (req.file && channelId) {
+    // Auto-register file in standalone collection if file is attached
+    if (req.file) {
       try {
-        const channel = await Channel.findById(channelId);
-        if (channel) {
+        let wsId = req.body.workspaceId;
+        let projId = req.body.projectId || null;
+
+        if (!wsId && channelId) {
+          const channel = await Channel.findById(channelId);
+          if (channel) {
+            wsId = channel.workspaceId;
+            projId = channel.projectId || null;
+          }
+        }
+
+        if (wsId) {
           const fileRecord = new FileModel({
-            workspaceId: channel.workspaceId,
-            projectId: channel.projectId || null,
+            workspaceId: wsId,
+            projectId: projId,
             uploadedBy: req.user.id,
             name: req.file.originalname,
             url: attachments[0].url,

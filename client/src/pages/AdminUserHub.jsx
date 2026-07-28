@@ -128,7 +128,9 @@ const AdminUserHub = () => {
 
       socket.on('statusChanged', handleStatusChanged);
       return () => {
-        socket.off('statusChanged', handleStatusChanged);
+        if (socket) {
+          socket.off('statusChanged', handleStatusChanged);
+        }
       };
     }
   }, [qClient]);

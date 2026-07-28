@@ -110,10 +110,12 @@ const DocumentWorkspace = () => {
       });
 
       return () => {
-        socket.emit('leaveDocument', { documentId: activeDocument._id });
-        socket.off('documentUpdate');
-        socket.off('documentCollaboratorJoined');
-        socket.off('documentCollaboratorLeft');
+        if (socket) {
+          socket.emit('leaveDocument', { documentId: activeDocument._id });
+          socket.off('documentUpdate');
+          socket.off('documentCollaboratorJoined');
+          socket.off('documentCollaboratorLeft');
+        }
       };
     }
   }, [activeDocument, currentUser]);

@@ -39,9 +39,13 @@ API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // If the error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+
+    // Skip retry for auth routes (refresh, login) to prevent infinite loops
+    const isAuthRoute = originalRequest.url?.includes('/auth/refresh') ||
+      originalRequest.url?.includes('/auth/login');
+
+    // If the error is 401 and we haven't retried yet and it's not an auth route
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -50,14 +54,12 @@ API.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return API(originalRequest);
           })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
-      
+
       try {
         // Request a new access token using the refresh token stored in cookie
         const response = await axios.post(
@@ -65,14 +67,14 @@ API.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        
+
         const { token } = response.data;
-        
+
         // Save new token to localstorage
         localStorage.setItem('token', token);
-        
+
         processQueue(null, token);
-        
+
         // Retry the original request with the new authorization header
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return API(originalRequest);
@@ -86,7 +88,7 @@ API.interceptors.response.use(
         isRefreshing = false;
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

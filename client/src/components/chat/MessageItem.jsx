@@ -8,8 +8,9 @@ import {
   togglePinStatus, 
   toggleReactionStatus 
 } from '../../services/chatService.js';
-import { Shield, Pin, Edit, Trash2, Smile, ArrowUpRight, MessageSquare, Download, CornerUpLeft } from 'lucide-react';
+import { Shield, Pin, Edit, Trash2, Smile, ArrowUpRight, MessageSquare, Download, CornerUpLeft, FileText, ExternalLink } from 'lucide-react';
 import Button from '../common/Button.jsx';
+import { downloadFileWithOriginalName } from '../../utils/downloadUtils.js';
 
 const MessageItem = ({ message, onReply }) => {
   const dispatch = useDispatch();
@@ -162,25 +163,46 @@ const MessageItem = ({ message, onReply }) => {
         {message.attachments?.map((file, idx) => (
           <div key={idx} className="mt-2">
             {file.fileType === 'image' ? (
-              <a href={file.url} target="_blank" rel="noopener noreferrer" className="block max-w-sm rounded-lg overflow-hidden border border-slate-800">
+              <a href={file.url} target="_blank" rel="noopener noreferrer" className="block max-w-sm rounded-lg overflow-hidden border border-slate-800 hover:border-brand-purple/40 transition-colors">
                 <img src={file.url} alt={file.name} className="max-h-48 w-auto object-cover" />
               </a>
             ) : (
-              <a 
-                href={file.url} 
-                download={file.name}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-2 rounded-lg bg-slate-900 border border-slate-850 hover:bg-slate-800 text-xs text-slate-300 max-w-xs transition-colors"
+              <div 
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-brand-purple/40 hover:bg-slate-850 text-xs text-slate-300 max-w-xs transition-all group/att"
               >
-                <div className="p-1.5 rounded bg-slate-950 text-slate-400">
-                  <Download size={14} />
+                <div className="p-2 rounded-lg bg-slate-950 text-slate-400 group-hover/att:text-brand-purple transition-colors shrink-0">
+                  <FileText size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{file.name}</p>
-                  <p className="text-[10px] text-slate-500 capitalize">{file.fileType}</p>
+                  <p className="font-semibold truncate text-slate-200 group-hover/att:text-white transition-colors" title={file.name}>{file.name}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{file.fileType || 'Document'}</p>
                 </div>
-              </a>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadFileWithOriginalName(file.url, file.name, file.fileType);
+                    }}
+                    className="p-1 rounded text-slate-500 hover:text-emerald-400 hover:bg-slate-800 transition-colors"
+                    title={`Download ${file.name}`}
+                  >
+                    <Download size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      let targetUrl = (file.url || '').replace('/raw/upload/fl_inline/', '/raw/upload/').replace('/image/upload/fl_inline/', '/image/upload/');
+                      window.open(targetUrl, '_blank');
+                    }}
+                    className="p-1 rounded text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+                    title="Open in new tab"
+                  >
+                    <ExternalLink size={13} />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))}

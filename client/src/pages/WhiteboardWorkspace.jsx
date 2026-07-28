@@ -108,8 +108,10 @@ const WhiteboardWorkspace = () => {
       });
 
       return () => {
-        socket.emit('leaveWhiteboard', { drawingId: activeDrawing._id });
-        socket.off('whiteboardUpdate');
+        if (socket) {
+          socket.emit('leaveWhiteboard', { drawingId: activeDrawing._id });
+          socket.off('whiteboardUpdate');
+        }
       };
     }
   }, [activeDrawing, currentUser, excalidrawAPI]);

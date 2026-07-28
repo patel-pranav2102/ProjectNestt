@@ -16,26 +16,40 @@ export const isProjectMember = async (req, res, next) => {
       throw new NotFoundError('Project not found.');
     }
 
-    // 1. Check parent workspace admin status
+    // 1. Check parent workspace membership status
     const workspace = await Workspace.findById(project.workspaceId);
     if (!workspace) {
       throw new NotFoundError('Parent workspace not found.');
     }
     const isOwner = workspace.owner.toString() === req.user.id;
     const wsMember = workspace.members.find(m => m.userId.toString() === req.user.id);
-    const isWsAdmin = wsMember && wsMember.role === 'Admin';
 
-    // 2. Check project member list status
-    const projectMember = await ProjectMember.findOne({ projectId, userId: req.user.id });
-
-    if (!projectMember && !isOwner && !isWsAdmin) {
+    if (!wsMember && !isOwner) {
       throw new ForbiddenError('You are not authorized to view this project.');
+    }
+
+    // 2. Check or auto-enroll project member status for workspace members
+    let projectMember = await ProjectMember.findOne({ projectId, userId: req.user.id });
+
+    if (!projectMember) {
+      try {
+        const isWsAdmin = isOwner || (wsMember && wsMember.role === 'Admin');
+        projectMember = new ProjectMember({
+          projectId,
+          userId: req.user.id,
+          role: isWsAdmin ? 'Admin' : (wsMember?.role || 'Member'),
+        });
+        await projectMember.save();
+      } catch (err) {
+        // Handle race conditions gracefully
+        projectMember = await ProjectMember.findOne({ projectId, userId: req.user.id });
+      }
     }
 
     // Attach values to request object
     req.project = project;
     req.workspace = workspace;
-    req.projectMember = projectMember; // Null for Workspace Admins/Owners not explicitly in the project
+    req.projectMember = projectMember;
 
     next();
   } catch (error) {

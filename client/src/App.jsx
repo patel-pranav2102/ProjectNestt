@@ -202,6 +202,10 @@ function AppLayout() {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
+      // Disconnect socket connection
+      disconnectSocket();
+
+      // Clear all Redux store slices (User info, User role, Workspaces, Teams, Projects, Chat, Kanban, Docs, Whiteboard, AI, Notifications)
       dispatch(logoutAction());
       dispatch(clearWorkspaces());
       dispatch(clearTeams());
@@ -212,6 +216,15 @@ function AppLayout() {
       dispatch(clearWhiteboardStore());
       dispatch(clearAiStore());
       dispatch(clearNotificationStore());
+
+      // Purge query client cache completely
+      queryClient.clear();
+
+      // Wipe all localStorage and sessionStorage keys
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Redirect to login page
       navigate('/login');
     }
   };
