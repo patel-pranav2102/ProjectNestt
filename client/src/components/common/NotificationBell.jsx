@@ -119,12 +119,12 @@ const NotificationBell = () => {
       <button
         id="notification-bell-btn"
         onClick={() => setOpen(o => !o)}
-        className="relative p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+        className="relative p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-all cursor-pointer shadow-sm"
         aria-label="Notifications"
       >
-        <Bell size={18} />
+        <Bell size={16} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-0.5 rounded-full bg-rose-500 border border-slate-950 text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-brand-purple text-[9px] font-bold text-white flex items-center justify-center border border-slate-950 shadow-sm">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

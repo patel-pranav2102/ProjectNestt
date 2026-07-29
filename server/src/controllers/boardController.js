@@ -66,7 +66,7 @@ export const getProjectBoards = async (req, res, next) => {
       throw new ForbiddenError('You must be a member of the workspace to view boards.');
     }
 
-    const boards = await Board.find({ projectId }).sort({ createdAt: -1 });
+    const boards = await Board.find({ projectId }).sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       status: 'success',
@@ -82,7 +82,7 @@ export const getBoardDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const board = await Board.findById(id);
+    const board = await Board.findById(id).lean();
     if (!board) {
       throw new NotFoundError('Board not found.');
     }
@@ -90,7 +90,8 @@ export const getBoardDetails = async (req, res, next) => {
     // Find all cards linked to board
     const cards = await Card.find({ boardId: id })
       .populate('assignees', 'name email avatarUrl status')
-      .sort({ position: 1 });
+      .sort({ position: 1 })
+      .lean();
 
     res.status(200).json({
       status: 'success',

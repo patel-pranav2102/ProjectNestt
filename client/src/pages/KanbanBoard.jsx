@@ -249,7 +249,7 @@ const KanbanBoard = () => {
 
       {/* Kanban Columns */}
       {activeBoard ? (
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-start pb-6">
+        <div className="flex-1 flex overflow-x-auto gap-4 items-start pb-6 snap-x snap-mandatory scrollbar-none">
           {activeBoard.columns?.map(colName => {
             const theme = getColumnTheme(colName);
             const colCards = cards.filter(c => c.column === colName);
@@ -267,7 +267,7 @@ const KanbanBoard = () => {
                   background: isDraggedOver ? undefined : theme.bg,
                   borderColor: isDraggedOver ? theme.accent : theme.border,
                 }}
-                className={`flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden
+                className={`flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden w-[85vw] sm:w-72 md:w-80 shrink-0 snap-start
                   ${isDraggedOver ? theme.dragOver + ' scale-[1.01] shadow-lg' : ''}`}
               >
                 {/* Column Header */}

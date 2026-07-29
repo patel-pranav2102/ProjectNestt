@@ -303,8 +303,8 @@ const FilesHub = () => {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin">
+            <table className="w-full text-left border-collapse text-xs min-w-[640px]">
               <thead>
                 <tr className="bg-slate-950/40 text-slate-500 border-b border-slate-900 sticky top-0 backdrop-blur-md">
                   <th className="px-6 py-3 font-semibold">Name</th>

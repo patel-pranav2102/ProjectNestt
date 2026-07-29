@@ -194,33 +194,33 @@ const WhiteboardWorkspace = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row gap-6 max-w-7xl w-full mx-auto relative h-[80svh] overflow-hidden">
+    <div className="flex-1 flex flex-col md:flex-row gap-5 max-w-7xl w-full mx-auto relative h-[82svh] overflow-hidden">
       
-      {/* Sidebar: boards selection directories */}
-      <div className="w-full md:w-64 glass-panel rounded-2xl flex flex-col p-4 text-left shrink-0 h-full bg-slate-950/20">
+      {/* Sidebar: boards selection directory (Full width on mobile when no board selected) */}
+      <div className={`${activeDrawing ? 'hidden md:flex' : 'flex'} w-full md:w-64 glass-panel rounded-2xl flex-col p-4 text-left shrink-0 h-full bg-slate-950/30 border border-slate-800/80`}>
         
         {/* Create form */}
-        <div className="border-b border-slate-900 pb-3 mb-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Whiteboard Files</h3>
+        <div className="border-b border-slate-800/80 pb-3 mb-4">
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2.5">Whiteboards</h3>
           {isProjMember && (
             <form onSubmit={handleCreateDrawing} className="flex gap-2">
               <input
                 type="text"
-                placeholder="New sketch name..."
+                placeholder="New sketch..."
                 value={sketchName}
                 onChange={(e) => setSketchName(e.target.value)}
-                className="flex-1 px-3 py-1.5 rounded bg-slate-900 border border-slate-850 text-xs text-white placeholder-slate-600 focus:outline-none"
+                className="flex-1 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-purple/70"
                 required
               />
-              <Button type="submit" variant="secondary" className="p-1 px-2.5 text-xs" isLoading={loading}>
-                <Plus size={12} />
+              <Button type="submit" variant="secondary" className="p-1.5 px-2.5 text-xs rounded-xl" isLoading={loading}>
+                <Plus size={14} />
               </Button>
             </form>
           )}
         </div>
 
         {/* Directory Items */}
-        <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-1 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-1 scrollbar-none">
           {drawings.map(d => {
             const isActive = activeDrawing?._id === d._id;
 
@@ -228,10 +228,10 @@ const WhiteboardWorkspace = () => {
               <button
                 key={d._id}
                 onClick={() => dispatch(setActiveDrawing(d))}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors w-full group
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all w-full cursor-pointer group
                   ${isActive 
-                    ? 'bg-brand-purple/10 text-white font-medium' 
-                    : 'text-slate-400 hover:bg-slate-855 hover:text-slate-200'
+                    ? 'bg-brand-purple/15 text-white font-semibold border border-brand-purple/30' 
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                   }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -243,30 +243,39 @@ const WhiteboardWorkspace = () => {
           })}
 
           {drawings.length === 0 && (
-            <span className="text-xs text-slate-650 italic px-3 py-1">No whiteboards.</span>
+            <span className="text-xs text-slate-500 italic px-3 py-2 text-center">No whiteboards yet.</span>
           )}
         </div>
 
       </div>
 
       {/* Main Whiteboard Excalidraw Frame */}
-      <div className="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden h-full relative bg-slate-950/20">
+      <div className={`flex-1 glass-panel rounded-2xl flex-col overflow-hidden h-full relative bg-slate-950/20 border border-slate-800/80 ${!activeDrawing ? 'hidden md:flex' : 'flex'}`}>
         {activeDrawing ? (
           <>
             {/* Header controls toolbar */}
-            <div className="px-6 py-3 bg-slate-950/60 border-b border-slate-900 flex items-center justify-between gap-4 flex-wrap z-10">
-              <div className="flex items-center gap-2.5">
-                <Layout size={16} className="text-brand-purple" />
-                <h2 className="text-sm font-bold text-white">{activeDrawing.name}</h2>
+            <div className="px-4 md:px-6 py-2.5 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between gap-3 flex-wrap z-10">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Mobile Back to List Button */}
+                <button
+                  onClick={() => dispatch(setActiveDrawing(null))}
+                  className="md:hidden p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                  title="Back to Whiteboard List"
+                >
+                  <ArrowLeft size={16} />
+                </button>
+
+                <Layout size={16} className="text-brand-purple shrink-0" />
+                <h2 className="text-xs md:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[220px]">{activeDrawing.name}</h2>
               </div>
 
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="accent" onClick={handleSaveWhiteboard} isLoading={loading}>
-                  <Save size={12} className="mr-1.5" />
-                  <span>Save Sketch</span>
+                <Button size="sm" variant="accent" onClick={handleSaveWhiteboard} isLoading={loading} className="py-1.5 text-xs">
+                  <Save size={12} className="mr-1" />
+                  <span>Save</span>
                 </Button>
                 {isProjAdmin && (
-                  <Button size="sm" variant="outline" onClick={handleDeleteDrawing} className="text-rose-500 border-rose-500/20 hover:bg-rose-500/10">
+                  <Button size="sm" variant="outline" onClick={handleDeleteDrawing} className="text-rose-400 border-rose-500/20 hover:bg-rose-500/10 py-1.5">
                     <Trash2 size={12} />
                   </Button>
                 )}
@@ -274,7 +283,7 @@ const WhiteboardWorkspace = () => {
             </div>
 
             {/* Excalidraw wrapper */}
-            <div className="flex-1 bg-slate-900 border-none relative text-left">
+            <div className="flex-1 bg-slate-900 border-none relative text-left w-full h-full min-h-0">
               <Excalidraw
                 excalidrawAPI={(api) => setExcalidrawAPI(api)}
                 initialData={{
@@ -290,11 +299,11 @@ const WhiteboardWorkspace = () => {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-550 p-8">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-500 p-8">
             <Layout size={36} className="text-slate-700" />
             <h3 className="text-lg font-bold text-slate-400 font-display">No Whiteboard Selected</h3>
             <p className="text-xs text-slate-500 max-w-sm text-center leading-relaxed">
-              Create a project sketch board or switch active files in the left sidebar directory to open drawings.
+              Create a project sketch board or switch active files in the directory to start drawing on the collaborative canvas.
             </p>
           </div>
         )}

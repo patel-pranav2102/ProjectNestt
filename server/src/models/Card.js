@@ -89,6 +89,10 @@ const cardSchema = new mongoose.Schema(
   }
 );
 
+// Compound index for fast board card ordering and assignee filtering
+cardSchema.index({ boardId: 1, column: 1, position: 1 });
+cardSchema.index({ assignees: 1 });
+
 const Card = mongoose.model('Card', cardSchema);
 
 export default Card;

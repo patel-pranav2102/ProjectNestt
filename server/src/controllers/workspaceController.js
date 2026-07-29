@@ -56,7 +56,8 @@ export const getMyWorkspaces = async (req, res, next) => {
   try {
     const workspaces = await Workspace.find({ 'members.userId': req.user.id })
       .populate('owner', 'name email avatarUrl')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       status: 'success',
@@ -73,7 +74,8 @@ export const getWorkspaceDetails = async (req, res, next) => {
     // req.workspace is attached by isWorkspaceMember middleware
     const workspace = await Workspace.findById(req.workspace._id)
       .populate('owner', 'name email avatarUrl')
-      .populate('members.userId', 'name email avatarUrl role status');
+      .populate('members.userId', 'name email avatarUrl role status')
+      .lean();
 
     res.status(200).json({
       status: 'success',
@@ -395,7 +397,7 @@ export const searchWorkspace = async (req, res, next) => {
     // 3. Drawings
     if (!type || type === 'drawing') {
       const filter = { projectId: { $in: projectIds } };
-      if (regex) filter.title = regex;
+      if (regex) filter.name = regex;
       if (creator) filter.creator = creator;
       if (hasDate) filter.createdAt = dateFilter;
       jobs.push(

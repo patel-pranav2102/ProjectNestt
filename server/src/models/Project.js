@@ -25,6 +25,11 @@ const projectSchema = new mongoose.Schema(
       ref: 'Team',
       default: null,
     },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     isArchived: {
       type: Boolean,
       default: false,

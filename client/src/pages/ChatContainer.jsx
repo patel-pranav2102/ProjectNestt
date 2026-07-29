@@ -4,14 +4,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   selectActiveConversation, 
+  setActiveConversation,
   selectChatMessages, 
   selectTypingUsers, 
   setMessages,
   addMessage,
-  updateMessage
+  setContacts
 } from '../features/chatSlice.js';
 import { selectCurrentUser, selectToken } from '../features/authSlice.js';
-import { setContacts } from '../features/chatSlice.js';
 import { selectActiveWorkspace } from '../features/workspaceSlice.js';
 import { fetchWorkspaceDetails } from '../services/workspaceService.js';
 import { 
@@ -25,7 +25,7 @@ import ChatSidebar from '../components/chat/ChatSidebar.jsx';
 import MessageItem from '../components/chat/MessageItem.jsx';
 import MessageInput from '../components/chat/MessageInput.jsx';
 import Button from '../components/common/Button.jsx';
-import { Hash, Lock, Search, Pin, MessageSquare, X, Send, AlertCircle } from 'lucide-react';
+import { Hash, Lock, Search, Pin, MessageSquare, X, Send, AlertCircle, ArrowLeft } from 'lucide-react';
 
 const ChatContainer = () => {
   const { workspaceId } = useParams();
@@ -128,21 +128,32 @@ const ChatContainer = () => {
   return (
     <div className="flex-1 flex flex-col md:flex-row gap-6 max-w-7xl w-full mx-auto">
       
-      {/* Sidebar Chat Directory */}
-      <ChatSidebar />
+      {/* Sidebar Chat Directory (Full width on mobile when no conversation selected) */}
+      <div className={`${activeConversation ? 'hidden md:flex' : 'flex'} w-full md:w-auto flex-col shrink-0`}>
+        <ChatSidebar />
+      </div>
 
       {/* Main Chat Interface Viewport */}
-      <div className="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden h-[80svh] relative bg-slate-950/20">
+      <div className={`flex-1 glass-panel rounded-2xl flex-col overflow-hidden h-[82svh] relative bg-slate-950/20 ${!activeConversation ? 'hidden md:flex' : 'flex'}`}>
         
         {activeConversation ? (
           <>
             {/* Chat header */}
-            <div className="px-6 py-4 border-b border-slate-900 bg-slate-950/60 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+            <div className="px-4 md:px-6 py-3.5 border-b border-slate-850 bg-slate-950/60 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {/* Mobile Back Button */}
+                <button
+                  onClick={() => dispatch(setActiveConversation(null))}
+                  className="md:hidden p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                  title="Back to Conversations"
+                >
+                  <ArrowLeft size={16} />
+                </button>
+
                 {activeConversation.type === 'channel' ? (
-                  <Hash size={18} className="text-brand-purple" />
+                  <Hash size={18} className="text-brand-purple shrink-0" />
                 ) : (
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300">
+                  <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
                     {activeConversation.avatarUrl ? (
                       <img src={activeConversation.avatarUrl} alt={activeConversation.name} className="w-full h-full object-cover" />
                     ) : (
@@ -150,7 +161,7 @@ const ChatContainer = () => {
                     )}
                   </div>
                 )}
-                <h2 className="text-base font-bold text-white font-display truncate max-w-[180px]">{activeConversation.name}</h2>
+                <h2 className="text-sm md:text-base font-bold text-white font-display truncate max-w-[140px] sm:max-w-[220px]">{activeConversation.name}</h2>
               </div>
 
               {/* Toolbar Controls */}
