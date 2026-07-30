@@ -9,17 +9,22 @@ export default defineConfig({
     include: ['es6-promise-pool', '@excalidraw/excalidraw'],
   },
   build: {
-    target: 'esnext',
-    minify: 'esbuild',
-    cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-redux': ['@reduxjs/toolkit', 'react-redux'],
-          'vendor-tanstack': ['@tanstack/react-query'],
-          'vendor-icons': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@reduxjs') || id.includes('node_modules/react-redux')) {
+            return 'vendor-redux';
+          }
+          if (id.includes('node_modules/@tanstack')) {
+            return 'vendor-tanstack';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
         },
       },
     },

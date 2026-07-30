@@ -22,7 +22,6 @@ import {
 import { fetchProjectDetails } from '../services/projectService.js';
 import { socket } from '../services/socketService.js';
 import { Excalidraw } from '@excalidraw/excalidraw';
-import "@excalidraw/excalidraw/index.css";
 import Button from '../components/common/Button.jsx';
 import { ArrowLeft, Save, Plus, Trash2, Layout, Info, Users, ShieldAlert } from 'lucide-react';
 
