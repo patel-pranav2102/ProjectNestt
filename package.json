@@ -8,12 +8,10 @@
     "build:client": "npm run build --prefix client",
     "start:server": "npm start --prefix server",
     "dev:server": "npm run dev --prefix server",
-    "dev:client": "npm run dev --prefix client",
-    "prod:start": "pm2 start ecosystem.config.cjs"
+    "dev:client": "npm run dev --prefix client"
   },
   "keywords": [
     "mern",
-    "pm2",
     "monorepo"
   ],
   "author": "",
