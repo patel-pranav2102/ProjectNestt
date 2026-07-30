@@ -12,7 +12,7 @@ export let socket = null;
 export const initSocket = (token, dispatch) => {
   if (socket) return socket;
 
-  const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || 'https://projectnestt.onrender.com';
   
   socket = io(socketUrl, {
     auth: { token },

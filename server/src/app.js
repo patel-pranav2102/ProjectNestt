@@ -25,8 +25,21 @@ dotenv.config();
 const app = express();
 
 // Middlewares
+// CORS configuration supporting production Vercel frontend & local development
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'https://project-nestt.vercel.app',
+  'http://localhost:5173',
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
